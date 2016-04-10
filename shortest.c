@@ -52,7 +52,7 @@ int main(int argc, const char *argv[])
 
     for (i = 0; i < num_places; i++) {
         for (j = 0; j < num_places; j++) {
-            weights[i + j*num_places] = (i == j) ? 0 : INF;
+            weights[i*num_places + j] = (i == j) ? 0 : INF;
         }
     }
 
@@ -74,6 +74,8 @@ int main(int argc, const char *argv[])
         new_connection->w = w;
         new_connection->next = places[u].firstEdge;
         places[u].firstEdge = new_connection;
+
+        weights[u*num_places + v] = w;
     }
 
     print_graph(places, num_places);
