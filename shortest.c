@@ -31,7 +31,7 @@ void print_graph(Vertex *graph, int size) {
     for (i = 0; i < size; i++) {
         Edge *e = graph[i].firstEdge;
         while (e != NULL) {
-            printf("%d == %d ==> %d\n", i+1, e->w+1, e->v+1);
+            printf("%d == %d ==> %d\n", i+1, e->w, e->v+1);
             e = e->next;
         }
     }
@@ -62,14 +62,18 @@ int main(int argc, const char *argv[])
     }
 
     for (i = 0; i < num_connections; i++) {
-        int j;
-        scanf("%d", &j);
+        int u, v, w;
+        scanf("%d", &u);
         Edge *new_connection = malloc(sizeof(Edge));
-        scanf("%d %d", &new_connection->v, &new_connection->w);
-        new_connection->next = places[--j].firstEdge;
-        places[j].firstEdge = new_connection;
-        new_connection->v--;
-        new_connection->w--;
+        scanf("%d %d", &v, &w);
+        /* Input starts at 1 so we offset it by -1 internally */
+        /* for easier handling of the graph */ 
+        --u;
+        --v;
+        new_connection->v = v;
+        new_connection->w = w;
+        new_connection->next = places[u].firstEdge;
+        places[u].firstEdge = new_connection;
     }
 
     print_graph(places, num_places);
