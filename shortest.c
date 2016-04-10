@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <limits.h>
 
 #define INF INT_MAX
+#define MIN(A, B) ((A < B) ? A : B)
 
 typedef struct Edge {
     int v;
@@ -104,7 +106,40 @@ int main(int argc, const char *argv[])
         weights[u*num_places + v] = w;
     }
 
-    print_graph(places, num_places);
+    {
+        int i, j;
+        int total_loss = INF;
+        int meeting_place = 0;
+        int *paths = get_shortest_all_pairs(weights, num_places);
+        bool reachable = false;
+
+        for (i = 0; i < num_places; i++) {
+            int current_loss = 0;
+            reachable = true;
+            for (j = 0; j < num_branches; j++) {
+                int weight = paths[branches[j]*num_places + i];
+                if (weight == INF) {
+                    reachable = false;
+                    break;
+                }
+                current_loss += weight;
+            }
+            if (reachable && current_loss < total_loss) {
+                total_loss = current_loss;
+                meeting_place = i;
+            }
+        }
+
+        if (!reachable)
+            puts("N");
+        else {
+            printf("%d %d\n", meeting_place+1, total_loss);
+            for (i = 0; i < num_branches; i++) {
+                printf("%d ", paths[branches[i]*num_places + meeting_place]);
+            }
+            putchar('\n');
+        }
+    }
 
     destroy_graph(places, num_places);
     free(weights);
