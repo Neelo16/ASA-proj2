@@ -1,7 +1,7 @@
 #!/bin/bash
 
 TESTDIR=tests
-BIN=shortest
+BIN=./shortest
 
 echo "Compiling..."
 make
