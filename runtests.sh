@@ -6,9 +6,9 @@ BIN=./shortest
 echo "Compiling..."
 make
 
-for i in "$TESTDIR"/*.in
+for i in "$TESTDIR"/in*
 do
-		TEST=${i%.in}
+		TEST=${i#${TESTDIR}/in}
 		echo "Running tests on $i"
-        "$BIN" < "$i" | diff - "$TEST.out" | colordiff
+        "$BIN" < "$i" | diff - "${TESTDIR}/out${TEST}" | colordiff
 done
