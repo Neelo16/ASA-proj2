@@ -2,11 +2,11 @@ CC=gcc
 CFLAGS=-O3 -ansi -Wall -g
 LIBS=-lm
 BIN=./shortest
-SOURCE=shortest.c
+SOURCE=shortest_johnson.c
 
 all: $(BIN)
 
-caracol: $(SOURCE)
+$(BIN): $(SOURCE)
 	$(CC) -o $(BIN) $(CFLAGS) $(SOURCE) $(LIBS)
 
 clean:
