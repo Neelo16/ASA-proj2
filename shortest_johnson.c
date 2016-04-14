@@ -67,7 +67,7 @@ void heap_decrease_key(int heap[], int heap_size, int i, int key, Vertex graph[]
 /* End heap functions */
 
 void dijkstra(Vertex graph[], int graph_size, int source, int distances[]) {
-    int *heap = malloc(sizeof(int)*graph_size);
+    int heap[graph_size];
     int i;
     for (i = 0; i < graph_size; i++) {
         distances[i] = i == source ? 0 : INF;
@@ -93,7 +93,6 @@ void dijkstra(Vertex graph[], int graph_size, int source, int distances[]) {
         }
     }
 
-    free(heap);
 }
 
 int *get_reweight_values(Vertex graph[], int graph_size) {
