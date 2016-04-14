@@ -7,7 +7,6 @@
 #define swap(A, B) {__typeof__(A) t = A; A = B; B = t;}
 
 typedef struct edge {
-    int u;
     int v;
     int w;
     struct edge *next;
@@ -110,23 +109,26 @@ void dijkstra(Vertex graph[], int graph_size, int source, int distances[]) {
     free(heap);
 }
 
-int *get_reweight_values(Vertex graph[], int graph_size, Edge edges[], int num_edges) {
+int *get_reweight_values(Vertex graph[], int graph_size) {
     int *distances = calloc(graph_size, sizeof(int));
     int i;
 
     for (i = 0; i < graph_size - 1; i++) {
-        int j;
+        int u;
         bool changed = false;
 
-        for (j = 0; j < num_edges; j++) {
-            Edge *e = edges + j;
-            int u = e->u;
-            int v = e->v;
-            int w = e->w;
-            int new_distance = distances[u] + w;
-            if (distances[v] > new_distance) {
-                changed = true;
-                distances[v] = new_distance;
+        for (u = 0; u < graph_size; u++) {
+            Edge *e = graph[u].first_edge;
+
+            while (e != NULL) {
+                int v = e->v;
+                int w = e->w;
+                int new_distance = distances[u] + w;
+                if (distances[v] > new_distance) {
+                    changed = true;
+                    distances[v] = new_distance;
+                }
+                e = e->next;
             }
         }
 
@@ -138,19 +140,22 @@ int *get_reweight_values(Vertex graph[], int graph_size, Edge edges[], int num_e
 }
 
 int *get_shortest_paths_matrix(Vertex graph[], int graph_size,
-                               Edge edges[], int num_edges,
                                int branches[], int num_branches) {
     int *distances = malloc(sizeof(int)*graph_size*num_branches);
-    int *h = get_reweight_values(graph, graph_size, edges, num_edges);
+    int *h = get_reweight_values(graph, graph_size);
     int i;
 
 
-    for (i = 0; i < num_edges; i++) {
-        Edge *e = edges + i;
-        int u = e->u;
-        int v = e->v;
-        int w = e->w;
-        e->w = w + h[u] - h[v];
+    for (i = 0; i < graph_size; i++) {
+        Edge *e = graph[i].first_edge;
+        int u = i;
+
+        while (e != NULL) {
+            int v = e->v;
+            int w = e->w;
+            e->w = w + h[u] - h[v];
+            e = e->next;
+        }
     }
     
     for (i = 0; i < num_branches; i++) {
@@ -225,7 +230,6 @@ int main(int argc, const char *argv[])
             /* We decrement same reason as given above for branches */
             --u;
             --v;
-            new_connection->u = u;
             new_connection->v = v;
             new_connection->w = w;
             new_connection->next = places[u].first_edge;
@@ -247,7 +251,6 @@ int main(int argc, const char *argv[])
         int meeting_place = 0;
         bool isolated = true;
         paths = get_shortest_paths_matrix(places, num_places,
-                                          connections, num_connections,
                                           branches, num_branches);
 
         for (i = 0; i < num_places; i++) {
