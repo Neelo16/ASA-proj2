@@ -64,19 +64,6 @@ void heap_decrease_key(int heap[], int heap_size, int i, int key, Vertex graph[]
     }
 }
 
-/* void build_min_heap(int heap[], int heap_size) { */
-/*     int i = heap_size/2; */
-/*     while (i > 0) */
-/*         min_heapify(heap, heap_size, i--); */
-/* } */
-
-/* void print_heap(int heap[], int heap_size) { */
-/*     int i; */
-/*     for (i = 0; i < heap_size; i++) */
-/*         printf("%d ", heap_key(heap[i])); */
-/*     putchar('\n'); */
-/* } */
-
 /* End heap functions */
 
 void dijkstra(Vertex graph[], int graph_size, int source, int distances[]) {
