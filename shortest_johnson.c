@@ -143,8 +143,9 @@ int *get_reweight_values(Vertex graph[], int graph_size, Edge edges[], int num_e
 }
 
 int *get_shortest_paths_matrix(Vertex graph[], int graph_size,
-                               Edge edges[], int num_edges) {
-    int *distances = malloc(sizeof(int)*graph_size*graph_size);
+                               Edge edges[], int num_edges,
+                               int branches[], int num_branches) {
+    int *distances = malloc(sizeof(int)*graph_size*num_branches);
     int *h = get_reweight_values(graph, graph_size, edges, num_edges);
     int i;
 
@@ -157,14 +158,14 @@ int *get_shortest_paths_matrix(Vertex graph[], int graph_size,
         e->w = w + h[u] - h[v];
     }
     
-    for (i = 0; i < graph_size; i++) {
+    for (i = 0; i < num_branches; i++) {
         int j;
-        dijkstra(graph, graph_size, i, distances + i*graph_size);
+        dijkstra(graph, graph_size, branches[i], distances + i*graph_size);
         for (j = 0; j < graph_size; j++) {
             int reweighted = distances[i*graph_size + j];
             if (reweighted == INF)
                 continue;
-            distances[i*graph_size + j] = reweighted + h[j] - h[i];
+            distances[i*graph_size + j] = reweighted + h[j] - h[branches[i]];
         }
     }
 
@@ -242,7 +243,7 @@ int main(int argc, const char *argv[])
             }
         }
 
-        INF = 8*max_weight;
+        INF = abs(num_places*max_weight) + 1;
     }
 
     {
@@ -250,13 +251,15 @@ int main(int argc, const char *argv[])
         int total_loss = INF;
         int meeting_place = 0;
         bool reachable = false;
-        paths = get_shortest_paths_matrix(places, num_places, connections, num_connections);
+        paths = get_shortest_paths_matrix(places, num_places,
+                                          connections, num_connections,
+                                          branches, num_branches);
 
         for (i = 0; i < num_places; i++) {
             int current_loss = 0;
             reachable = true;
             for (j = 0; j < num_branches; j++) {
-                int weight = paths[branches[j]*num_places + i];
+                int weight = paths[j*num_places + i];
                 if (weight == INF) {
                     reachable = false;
                     break;
@@ -274,7 +277,7 @@ int main(int argc, const char *argv[])
         else {
             printf("%d %d\n", meeting_place+1, total_loss);
             for (i = 0; i < num_branches; i++) {
-                printf("%d ", paths[branches[i]*num_places + meeting_place]);
+                printf("%d ", paths[i*num_places + meeting_place]);
             }
             putchar('\n');
         }
