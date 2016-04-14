@@ -18,11 +18,6 @@ typedef struct vertex {
     Edge *first_edge;
 } Vertex;
 
-typedef struct heap_node {
-    Vertex *vertex;
-    int dist;
-} Heap_node;
-
 int INF = 0x1337; /* FIXME */
 
 /* Heap functions */
@@ -30,83 +25,83 @@ int INF = 0x1337; /* FIXME */
 #define heap_parent(i) ((i-1)/2)
 #define heap_left(i) (2*i+1)
 #define heap_right(i) (2*i+2)
-#define heap_key(i) (i.dist)
-#define heap_set_key(i, key) i.dist = key;
-#define heap_swap(heap, i, j) {heap[i].vertex->heap_index = j; heap[j].vertex->heap_index = i; swap(heap[i], heap[j]);}
 
-void min_heapify(Heap_node heap[], int heap_size, int i) {
+void heap_swap(int heap[], int i, int j, Vertex graph[]) {
+    int u = heap[i];
+    int v = heap[j];
+    swap(heap[i], heap[j]);
+    swap(graph[u].heap_index, graph[v].heap_index);
+}
+
+void min_heapify(int heap[], int heap_size, int i, Vertex graph[], int keys[]) {
     int l = heap_left(i);
     int r = heap_right(i);
     int smallest = i;
 
-    if (l < heap_size && heap_key(heap[l]) < heap_key(heap[i]))
+    if (l < heap_size && keys[heap[l]] < keys[heap[i]])
         smallest = l;
 
-    if (r < heap_size && heap_key(heap[r]) < heap_key(heap[smallest]))
+    if (r < heap_size && keys[heap[r]] < keys[heap[smallest]])
         smallest = r;
 
     if (i != smallest) {
-        heap_swap(heap, i, smallest);
-        min_heapify(heap, heap_size, smallest);
+        heap_swap(heap, i, smallest, graph);
+        min_heapify(heap, heap_size, smallest, graph, keys);
     }
 }
 
-Vertex *heap_extract_min(Heap_node heap[], int heap_size) {
-    Vertex *min = heap[0].vertex;
-    --heap_size;
-    heap_swap(heap, 0, heap_size);
-    min_heapify(heap, heap_size, 0);
+int heap_extract_min(int heap[], int heap_size, Vertex graph[], int keys[]) {
+    int min = heap[0];
+    heap_swap(heap, 0, --heap_size, graph);
+    min_heapify(heap, heap_size, 0, graph, keys);
     return min;
 }
 
-void heap_decrease_key(Heap_node heap[], int heap_size, int i, int key) {
-    heap_set_key(heap[i], key);
-    while (i > 0 && heap_key(heap[heap_parent(i)]) > heap_key(heap[i])) {
-        heap_swap(heap, i, heap_parent(i));
+void heap_decrease_key(int heap[], int heap_size, int i, int key, Vertex graph[], int keys[]) {
+    keys[heap[i]] = key;
+    while (i > 0 && keys[heap[heap_parent(i)]] > keys[heap[i]]) {
+        heap_swap(heap, i, heap_parent(i), graph);
         i = heap_parent(i);
     }
 }
 
-void build_min_heap(Heap_node heap[], int heap_size) {
-    int i = heap_size/2;
-    while (i > 0)
-        min_heapify(heap, heap_size, i--);
-}
+/* void build_min_heap(int heap[], int heap_size) { */
+/*     int i = heap_size/2; */
+/*     while (i > 0) */
+/*         min_heapify(heap, heap_size, i--); */
+/* } */
 
-void print_heap(Heap_node heap[], int heap_size) {
-    int i;
-    for (i = 0; i < heap_size; i++)
-        printf("%d ", heap_key(heap[i]));
-    putchar('\n');
-}
+/* void print_heap(int heap[], int heap_size) { */
+/*     int i; */
+/*     for (i = 0; i < heap_size; i++) */
+/*         printf("%d ", heap_key(heap[i])); */
+/*     putchar('\n'); */
+/* } */
 
 /* End heap functions */
 
 void dijkstra(Vertex graph[], int graph_size, int source, int distances[]) {
-    Heap_node *heap = malloc(sizeof(Heap_node)*graph_size);
+    int *heap = malloc(sizeof(int)*graph_size);
     int i;
     for (i = 0; i < graph_size; i++) {
-        heap[i].dist = i == source ? 0 : INF;
         distances[i] = i == source ? 0 : INF;
-        heap[i].vertex = graph + i;
+        heap[i] = i;
         graph[i].heap_index = i;
     }
 
-    heap_swap(heap, 0, source);
-    distances[source] = 0;
+    heap_swap(heap, 0, source, graph);
     
     while (graph_size) {
-        Vertex *vertex = heap_extract_min(heap, graph_size--);
-        Edge *e = vertex->first_edge;
+        int u = heap_extract_min(heap, graph_size--, graph, distances);
+        Edge *e = graph[u].first_edge;
         while (e != NULL) {
-            int u = e->u;
             int v = e->v;
             int w = e->w;
             int new_distance = distances[u] + w;
             if (distances[v] > new_distance) {
-                distances[v] = new_distance;
                 heap_decrease_key(heap, graph_size,
-                                  graph[v].heap_index, new_distance);
+                                  graph[v].heap_index, new_distance,
+                                  graph, distances);
             }
             e = e->next;
         }
