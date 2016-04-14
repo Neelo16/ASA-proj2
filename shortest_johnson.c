@@ -250,14 +250,14 @@ int main(int argc, const char *argv[])
         int i, j;
         int total_loss = INF;
         int meeting_place = 0;
-        bool reachable = false;
+        bool isolated = true;
         paths = get_shortest_paths_matrix(places, num_places,
                                           connections, num_connections,
                                           branches, num_branches);
 
         for (i = 0; i < num_places; i++) {
             int current_loss = 0;
-            reachable = true;
+            bool reachable = true;
             for (j = 0; j < num_branches; j++) {
                 int weight = paths[j*num_places + i];
                 if (weight == INF) {
@@ -267,12 +267,13 @@ int main(int argc, const char *argv[])
                 current_loss += weight;
             }
             if (reachable && current_loss < total_loss) {
+                isolated = false;
                 total_loss = current_loss;
                 meeting_place = i;
             }
         }
 
-        if (!reachable)
+        if (isolated)
             puts("N");
         else {
             printf("%d %d\n", meeting_place+1, total_loss);
