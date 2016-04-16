@@ -2,7 +2,7 @@ CC=gcc
 CFLAGS=-O3 -ansi -Wall -g
 LIBS=-lm
 BIN=./shortest
-SOURCE=shortest_johnson.c
+SOURCE=shortest.c
 
 all: $(BIN)
 
