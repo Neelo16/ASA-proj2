@@ -268,6 +268,7 @@ int main(int argc, const char *argv[])
         putchar('\n');
     }
 
+    free(result->distances);
     free(result);
     free(branches);
     free(graph);
