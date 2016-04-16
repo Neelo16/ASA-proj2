@@ -24,7 +24,7 @@ typedef struct result {
     int *distances;
 } Result;
 
-int INF = 0x1337; /* FIXME */
+static int INF;
 
 /* Heap functions */
 
@@ -39,7 +39,7 @@ void heap_swap(int heap[], int i, int j, Vertex graph[]) {
     swap(graph[u].heap_index, graph[v].heap_index);
 }
 
-void min_heapify(int heap[], int heap_size, int i, Vertex graph[], int keys[]) {
+void min_heapify(int heap[], size_t heap_size, int i, Vertex graph[], int keys[]) {
     int l = heap_left(i);
     int r = heap_right(i);
     int smallest = i;
@@ -56,14 +56,14 @@ void min_heapify(int heap[], int heap_size, int i, Vertex graph[], int keys[]) {
     }
 }
 
-int heap_extract_min(int heap[], int heap_size, Vertex graph[], int keys[]) {
+int heap_extract_min(int heap[], size_t heap_size, Vertex graph[], int keys[]) {
     int min = heap[0];
     heap_swap(heap, 0, --heap_size, graph);
     min_heapify(heap, heap_size, 0, graph, keys);
     return min;
 }
 
-void heap_decrease_key(int heap[], int heap_size, int i, int key, Vertex graph[], int keys[]) {
+void heap_decrease_key(int heap[], size_t heap_size, int i, int key, Vertex graph[], int keys[]) {
     keys[heap[i]] = key;
     while (i > 0 && keys[heap[heap_parent(i)]] > keys[heap[i]]) {
         heap_swap(heap, i, heap_parent(i), graph);
@@ -73,33 +73,49 @@ void heap_decrease_key(int heap[], int heap_size, int i, int key, Vertex graph[]
 
 /* End heap functions */
 
-void dijkstra(Vertex graph[], int graph_size, int source, int distances[]) {
-    int heap[graph_size];
+void transpose_graph(Vertex graph[], size_t graph_size,
+                     Edge   edges[], size_t num_edges) {
+    int i;
+    for (i = 0; i < graph_size; i++)
+        graph[i].first_edge = NULL;
+    for (i = 0; i < num_edges; i++) {
+        Edge *edge = edges + i;
+        int u = edge->u;
+        int v = edge->v;
+        edge->u = v;
+        edge->v = u;
+        edge->next = graph[v].first_edge;
+        graph[v].first_edge = edge;
+    }
+}
+
+void dijkstra(Vertex graph[], int graph_size, int source, int result[]) {
+    /* Modifies result and stores the solution there */
+    int *heap = malloc(sizeof(int)*graph_size);
     int i;
     for (i = 0; i < graph_size; i++) {
-        distances[i] = i == source ? 0 : INF;
-        heap[i] = i;
-        graph[i].heap_index = i;
+        result[i] = i == source ? 0 : INF;
+        heap[i] = graph[i].heap_index = i;
     }
 
     heap_swap(heap, 0, source, graph);
     
     while (graph_size) {
-        int u = heap_extract_min(heap, graph_size--, graph, distances);
+        int u = heap_extract_min(heap, graph_size--, graph, result);
         Edge *e = graph[u].first_edge;
         while (e != NULL) {
             int v = e->v;
             int w = e->w;
-            int new_distance = distances[u] + w;
-            if (distances[v] > new_distance) {
+            int new_distance = result[u] + w;
+            if (result[v] > new_distance) {
                 heap_decrease_key(heap, graph_size,
                                   graph[v].heap_index, new_distance,
-                                  graph, distances);
+                                  graph, result);
             }
             e = e->next;
         }
     }
-
+    free(heap);
 }
 
 int *get_reweight_values(Vertex graph[], int graph_size) {
@@ -112,7 +128,6 @@ int *get_reweight_values(Vertex graph[], int graph_size) {
 
         for (u = 0; u < graph_size; u++) {
             Edge *e = graph[u].first_edge;
-
             while (e != NULL) {
                 int v = e->v;
                 int w = e->w;
@@ -132,15 +147,15 @@ int *get_reweight_values(Vertex graph[], int graph_size) {
     return distances;
 }
 
-Result *get_shortest_paths_matrix(Vertex graph[], int graph_size,
-                               int branches[], int num_branches,
-                               Edge edges[],   int num_edges) {
+Result *get_result(Vertex graph[], size_t graph_size,
+                   int branches[], size_t num_branches,
+                   Edge edges[],   size_t num_edges) {
     int *distances = malloc(sizeof(int)*graph_size);
-    int *h = get_reweight_values(graph, graph_size);
-    int i;
     int *sum = calloc(graph_size, sizeof(int));
     bool *reachable = malloc(sizeof(bool)*graph_size);
     Result *result = malloc(sizeof(Result));
+    int *h = get_reweight_values(graph, graph_size);
+    int i;
 
     result->distances = distances;
     result->meeting_place = -1;
@@ -149,9 +164,7 @@ Result *get_shortest_paths_matrix(Vertex graph[], int graph_size,
     for (i = 0; i < graph_size; i++) {
         Edge *e = graph[i].first_edge;
         int u = i;
-
         reachable[i] = true;
-
         while (e != NULL) {
             int v = e->v;
             int w = e->w;
@@ -164,12 +177,11 @@ Result *get_shortest_paths_matrix(Vertex graph[], int graph_size,
         int j;
         dijkstra(graph, graph_size, branches[i], distances);
         for (j = 0; j < graph_size; j++) {
-            int reweighted = distances[j];
-            if (reweighted == INF) {
+            if (distances[j] == INF) {
                 reachable[j] = false;
                 continue;
             }
-            sum[j] += reweighted + h[j] - h[branches[i]];
+            sum[j] += distances[j] + h[j] - h[branches[i]];
         }
     }
 
@@ -181,24 +193,11 @@ Result *get_shortest_paths_matrix(Vertex graph[], int graph_size,
     }
 
     if (result->meeting_place != -1) {
-        /* We turn the graph into its transpose and perform a Dijkstra from */
-        /* the meeting place                                                */
-        for (i = 0; i < graph_size; i++)
-            graph[i].first_edge = NULL;
-        for (i = 0; i < num_edges; i++) {
-            Edge *edge = edges + i;
-            int u = edge->u;
-            int v = edge->v;
-            edge->u = v;
-            edge->v = u;
-            edge->next = graph[v].first_edge;
-            graph[v].first_edge = edge;
-        }
+        transpose_graph(graph, graph_size, edges, num_edges);
         dijkstra(graph, graph_size, result->meeting_place, distances);
         for (i = 0; i < num_branches; i++) {
             distances[branches[i]] += h[result->meeting_place] - h[branches[i]];
         }
-
     }
 
     free(sum);
@@ -207,82 +206,57 @@ Result *get_shortest_paths_matrix(Vertex graph[], int graph_size,
     return result;
 }
 
-void print_graph(Vertex *graph, int size) {
+void read_graph(Vertex graph[], size_t graph_size,
+                Edge   edges[], size_t num_edges) {
+    bool max_defined = false;
+    int max_weight = 0;
     int i;
-    for (i = 0; i < size; i++) {
-        Edge *e = graph[i].first_edge;
-        while (e != NULL) {
-            printf("%d == %d ==> %d\n", i+1, e->w, e->v+1);
-            e = e->next;
-        }
-    }
-}
 
-void print_matrix(int *matrix, int size) {
-    int i, j;
-    for (i = 0; i < size; i++) {
-        for (j = 0; j < size; j++) {
-            if (matrix[i*size + j] == INF)
-                printf("%s", "| INF ");
-            else
-                printf("| %d ", matrix[i*size + j]);
+    for (i = 0; i < num_edges; i++) {
+        int u, v, w;
+        scanf("%d", &u);
+        Edge *new_edge = edges + i;
+        scanf("%d %d", &v, &w);
+        new_edge->u = --u;
+        new_edge->v = --v;
+        new_edge->w = w;
+        new_edge->next = graph[u].first_edge;
+        graph[u].first_edge = new_edge;
+        if (max_defined)
+            max_weight = MAX(max_weight, w);
+        else {
+            max_defined = true;
+            max_weight = w;
         }
-        puts("|");
     }
+
+    INF = abs(graph_size*max_weight) + 1;
 }
 
 int main(int argc, const char *argv[])
 {
-    int num_places = 0, num_branches = 0, num_connections = 0;
+    size_t graph_size = 0, num_branches = 0, num_edges = 0;
     int i;
     int *branches = NULL;
-    Vertex *places = NULL;
-    Edge *connections = NULL;
+    Vertex *graph = NULL;
+    Edge *edges = NULL;
     Result *result = NULL;
 
-    scanf("%d %d %d", &num_places, &num_branches, &num_connections);
+    scanf("%lu %lu %lu", &graph_size, &num_branches, &num_edges);
     branches = malloc(sizeof(*branches)*num_branches);
-    places = calloc(num_places, sizeof(*places));
-    connections = malloc(sizeof(Edge)*num_connections);
+    graph = calloc(graph_size, sizeof(*graph));
+    edges = malloc(sizeof(Edge)*num_edges);
 
     for (i = 0; i < num_branches; i++) {
         scanf("%d", branches+i);
-        /* Input starts at 1 so we offset it by -1 internally */
-        /* for easier handling of the graph */ 
         branches[i]--;
     }
 
-    {
-        bool max_defined = false;
-        int max_weight = 0;
+    read_graph(graph, graph_size, edges, num_edges);
 
-        for (i = 0; i < num_connections; i++) {
-            int u, v, w;
-            scanf("%d", &u);
-            Edge *new_connection = connections + i;
-            scanf("%d %d", &v, &w);
-            /* We decrement same reason as given above for branches */
-            --u;
-            --v;
-            new_connection->u = u;
-            new_connection->v = v;
-            new_connection->w = w;
-            new_connection->next = places[u].first_edge;
-            places[u].first_edge = new_connection;
-            if (max_defined)
-                max_weight = MAX(max_weight, w);
-            else {
-                max_defined = true;
-                max_weight = w;
-            }
-        }
-
-        INF = abs(num_places*max_weight) + 1;
-    }
-
-    result = get_shortest_paths_matrix(places, num_places,
-                                      branches, num_branches,
-                                      connections, num_connections);
+    result = get_result(graph, graph_size,
+                        branches, num_branches,
+                        edges, num_edges);
 
     if (result->meeting_place == -1)
         puts("N");
@@ -296,8 +270,8 @@ int main(int argc, const char *argv[])
 
     free(result);
     free(branches);
-    free(places);
-    free(connections);
+    free(graph);
+    free(edges);
 
     return 0;
 }
