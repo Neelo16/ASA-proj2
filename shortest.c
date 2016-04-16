@@ -7,6 +7,7 @@
 #define swap(A, B) {__typeof__(A) t = A; A = B; B = t;}
 
 typedef struct edge {
+    int u;
     int v;
     int w;
     struct edge *next;
@@ -16,6 +17,12 @@ typedef struct vertex {
     int heap_index; /* For added efficiency in Dijkstra */
     Edge *first_edge;
 } Vertex;
+
+typedef struct result {
+    int meeting_place;
+    int total_loss;
+    int *distances;
+} Result;
 
 int INF = 0x1337; /* FIXME */
 
@@ -125,16 +132,25 @@ int *get_reweight_values(Vertex graph[], int graph_size) {
     return distances;
 }
 
-int *get_shortest_paths_matrix(Vertex graph[], int graph_size,
-                               int branches[], int num_branches) {
-    int *distances = malloc(sizeof(int)*graph_size*num_branches);
+Result *get_shortest_paths_matrix(Vertex graph[], int graph_size,
+                               int branches[], int num_branches,
+                               Edge edges[],   int num_edges) {
+    int *distances = malloc(sizeof(int)*graph_size);
     int *h = get_reweight_values(graph, graph_size);
     int i;
+    int *sum = calloc(graph_size, sizeof(int));
+    bool *reachable = malloc(sizeof(bool)*graph_size);
+    Result *result = malloc(sizeof(Result));
 
+    result->distances = distances;
+    result->meeting_place = -1;
+    result->total_loss = INF;
 
     for (i = 0; i < graph_size; i++) {
         Edge *e = graph[i].first_edge;
         int u = i;
+
+        reachable[i] = true;
 
         while (e != NULL) {
             int v = e->v;
@@ -146,17 +162,49 @@ int *get_shortest_paths_matrix(Vertex graph[], int graph_size,
     
     for (i = 0; i < num_branches; i++) {
         int j;
-        dijkstra(graph, graph_size, branches[i], distances + i*graph_size);
+        dijkstra(graph, graph_size, branches[i], distances);
         for (j = 0; j < graph_size; j++) {
-            int reweighted = distances[i*graph_size + j];
-            if (reweighted == INF)
+            int reweighted = distances[j];
+            if (reweighted == INF) {
+                reachable[j] = false;
                 continue;
-            distances[i*graph_size + j] = reweighted + h[j] - h[branches[i]];
+            }
+            sum[j] += reweighted + h[j] - h[branches[i]];
         }
     }
 
+    for (i = 0; i < graph_size; i++) {
+        if (reachable[i] && sum[i] < result->total_loss) {
+            result->meeting_place = i;
+            result->total_loss = sum[i];
+        }
+    }
+
+    if (result->meeting_place != -1) {
+        /* We turn the graph into its transpose and perform a Dijkstra from */
+        /* the meeting place                                                */
+        for (i = 0; i < graph_size; i++)
+            graph[i].first_edge = NULL;
+        for (i = 0; i < num_edges; i++) {
+            Edge *edge = edges + i;
+            int u = edge->u;
+            int v = edge->v;
+            edge->u = v;
+            edge->v = u;
+            edge->next = graph[v].first_edge;
+            graph[v].first_edge = edge;
+        }
+        dijkstra(graph, graph_size, result->meeting_place, distances);
+        for (i = 0; i < num_branches; i++) {
+            distances[branches[i]] += h[result->meeting_place] - h[branches[i]];
+        }
+
+    }
+
+    free(sum);
+    free(reachable);
     free(h);
-    return distances;
+    return result;
 }
 
 void print_graph(Vertex *graph, int size) {
@@ -190,7 +238,7 @@ int main(int argc, const char *argv[])
     int *branches = NULL;
     Vertex *places = NULL;
     Edge *connections = NULL;
-    int *paths = NULL;
+    Result *result = NULL;
 
     scanf("%d %d %d", &num_places, &num_branches, &num_connections);
     branches = malloc(sizeof(*branches)*num_branches);
@@ -216,6 +264,7 @@ int main(int argc, const char *argv[])
             /* We decrement same reason as given above for branches */
             --u;
             --v;
+            new_connection->u = u;
             new_connection->v = v;
             new_connection->w = w;
             new_connection->next = places[u].first_edge;
@@ -231,47 +280,24 @@ int main(int argc, const char *argv[])
         INF = abs(num_places*max_weight) + 1;
     }
 
-    {
-        int i, j;
-        int total_loss = INF;
-        int meeting_place = 0;
-        bool isolated = true;
-        paths = get_shortest_paths_matrix(places, num_places,
-                                          branches, num_branches);
+    result = get_shortest_paths_matrix(places, num_places,
+                                      branches, num_branches,
+                                      connections, num_connections);
 
-        for (i = 0; i < num_places; i++) {
-            int current_loss = 0;
-            bool reachable = true;
-            for (j = 0; j < num_branches; j++) {
-                int weight = paths[j*num_places + i];
-                if (weight == INF) {
-                    reachable = false;
-                    break;
-                }
-                current_loss += weight;
-            }
-            if (reachable && current_loss < total_loss) {
-                isolated = false;
-                total_loss = current_loss;
-                meeting_place = i;
-            }
+    if (result->meeting_place == -1)
+        puts("N");
+    else {
+        printf("%d %d\n", result->meeting_place+1, result->total_loss);
+        for (i = 0; i < num_branches; i++) {
+            printf("%d ", result->distances[branches[i]]);
         }
+        putchar('\n');
+    }
 
-        if (isolated)
-            puts("N");
-        else {
-            printf("%d %d\n", meeting_place+1, total_loss);
-            for (i = 0; i < num_branches; i++) {
-                printf("%d ", paths[i*num_places + meeting_place]);
-            }
-            putchar('\n');
-        }
-    }   
-
+    free(result);
     free(branches);
     free(places);
     free(connections);
-    free(paths);
 
     return 0;
 }
