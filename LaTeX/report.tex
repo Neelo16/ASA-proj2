@@ -10,15 +10,16 @@
 \SetKwProg{Function}{function}{}{}
 \SetKwInOut{Output}{Output}
 \SetKwFunction{init}{initialize-graph}
-\SetKwFunction{heapify}{min-heapify}
+\SetKwFunction{heapify}{min-heapify} % FIXME
 \SetKwFunction{result}{get-result}
-\SetKwFunction{extractmin}{heap-extract-min}
-\SetKwFunction{decreasekey}{heap-decrease-key}
+\SetKwFunction{extractmin}{heap-extract-min} % FIXME
+\SetKwFunction{decreasekey}{heap-decrease-key} % FIXME
 \SetKwFunction{bellmanford}{bellman-ford}
 \SetKwFunction{dijkstra}{dijkstra}
 \SetKwFunction{h}{h}
 \SetKwFunction{weight}{w}
 \SetKwFunction{weightprime}{w'}
+\SetKwFunction{min}{min}
 \SetKwFunction{shortestpath}{$\delta$}
 \SetKwFunction{shortestpathprime}{$\delta$'}
 \SetKwComment{Comment}{$\triangleright$\ }{}
@@ -51,12 +52,21 @@ O algoritmo pode ser representado em pseudocódigo da seguinte forma:
         }
         G' $=$ G $\cup$ s\;
         d[v] $\leftarrow$ 0 $\forall$ v $\in$ V[G]\;
-        \bellmanford{G', s, w}\;
+        \bellmanford{G', s, $\weight$}\;
         \h{v} = \shortestpath{s, v} calculado pelo $\bellmanford$  $\forall$ v $\in$ V[G]\; 
         \weightprime{u, v} = \weight{u, v} + \h{u} $-$ \h{v} $\forall$ $(u,v)$ $\in$ E[G]\; 
         \ForEach{u $in$ F[G]}{
             \dijkstra{G, u, \weightprime}\;
-            sum[v] $\leftarrow$ sum[v] + \shortestpathprime{u,v} $+$ \h{v} $-$ \h{u}\;
+            \ForEach{v $\in$ \shortestpathprime{u, v} calculados por $\dijkstra$}{
+                \If{\shortestpathprime{u, v} = $\infty$}{
+                    reachable[v] $\leftarrow$ \textbf{false}\;
+                }
+                sum[v] $\leftarrow$ sum[v] + \shortestpathprime{u,v} $+$ \h{v} $-$ \h{u}\;
+            }
+        }
+        meeting-place $\leftarrow$ \min{\{s: reachable[s] $\forall$ s $\in$ sum\}}\;
+        \If{meeting-place $\neq$ $\emptyset$}{
+            paths = \dijkstra{$G^{T}$, meeting-place, $\weightprime$}\;
         }
     }
     \caption{Descobrir o ponto de encontro, se existir}
