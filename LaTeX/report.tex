@@ -7,10 +7,20 @@
 \usepackage{pgfplots}
 \usepackage[noend,linesnumbered,ruled]{algorithm2e}
 \renewcommand{\O}[1]{$\mathcal{O}(#1)$}
-\SetKwFunction{findver}{Find-Fundamental-Vertices}
 \SetKwProg{Function}{function}{}{}
 \SetKwInOut{Output}{Output}
 \SetKwFunction{init}{initialize-graph}
+\SetKwFunction{heapify}{min-heapify}
+\SetKwFunction{result}{get-result}
+\SetKwFunction{extractmin}{heap-extract-min}
+\SetKwFunction{decreasekey}{heap-decrease-key}
+\SetKwFunction{bellmanford}{bellman-ford}
+\SetKwFunction{dijkstra}{dijkstra}
+\SetKwFunction{h}{h}
+\SetKwFunction{weight}{w}
+\SetKwFunction{weightprime}{w'}
+\SetKwFunction{shortestpath}{$\delta$}
+\SetKwFunction{shortestpathprime}{$\delta$'}
 \SetKwComment{Comment}{$\triangleright$\ }{}
 \pgfplotsset{compat=1.12}
 \begin{document}
@@ -31,6 +41,26 @@ Após encontrar o ponto de encontro correto, é calculado o grafo transposto do 
 \\
 \\
 O algoritmo pode ser representado em pseudocódigo da seguinte forma:
+\\
+\\
+\begin{algorithm}[H]
+    \Function{\result{G, F, w}}{
+        \ForEach{f $\in$ F[G]} {
+            reachable[f] $\leftarrow$ \textbf{true}\;
+            sum[v] $\leftarrow$ 0\;
+        }
+        G' $=$ G $\cup$ s\;
+        d[v] $\leftarrow$ 0 $\forall$ v $\in$ V[G]\;
+        \bellmanford{G', s, w}\;
+        \h{v} = \shortestpath{s, v} calculado pelo $\bellmanford$  $\forall$ v $\in$ V[G]\; 
+        \weightprime{u, v} = \weight{u, v} + \h{u} $-$ \h{v} $\forall$ $(u,v)$ $\in$ E[G]\; 
+        \ForEach{u $in$ F[G]}{
+            \dijkstra{G, u, \weightprime}\;
+            sum[v] $\leftarrow$ sum[v] + \shortestpathprime{u,v} $+$ \h{v} $-$ \h{u}\;
+        }
+    }
+    \caption{Descobrir o ponto de encontro, se existir}
+\end{algorithm}
 
 \begin{thebibliography}{9}
 		\bibitem{algs3ed}
