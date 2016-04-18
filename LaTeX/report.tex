@@ -1,0 +1,46 @@
+\documentclass[12pt,a4paper,notitlepage]{article}
+\usepackage[portuguese]{babel}
+\usepackage[margin=3cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{secdot}
+\usepackage{pgfplots}
+\usepackage[noend,linesnumbered,ruled]{algorithm2e}
+\renewcommand{\O}[1]{$\mathcal{O}(#1)$}
+\SetKwFunction{findver}{Find-Fundamental-Vertices}
+\SetKwProg{Function}{function}{}{}
+\SetKwInOut{Output}{Output}
+\SetKwFunction{init}{initialize-graph}
+\SetKwComment{Comment}{$\triangleright$\ }{}
+\pgfplotsset{compat=1.12}
+\begin{document}
+\title{\textbf{Análise e Síntese de Algoritmos} \\\large 2º Projeto}
+\date{}
+\author{Tomás Cunha, nº 81201, Grupo 15}
+\maketitle
+\section{Introdução}
+Este projeto tem como objetivo encontrar um ponto de encontro entre várias filiais de forma a minimizar o custo total das rotas, se existir.
+O problema pode ser reduzido a encontrar a menor soma dos custos dos caminhos mais curtos de todas as filiais para cada localidade, representando os caminhos como arestas de um grafo e os vértices como as localidades.
+Na resolução do problema utilizei a descrição do algoritmo de Johnson e da estutura de dados Min-Heap disponíveis no livro \emph{Introduction to Algorithms}\cite{algs3ed}.
+
+\section{Descrição da solução}
+A solução encontrada consiste em realizar uma variação do algoritmo Johnson tomando como vértices de fonte todas as filiais.
+Em vez de guardar todos os caminhos mais curtos numa matriz, é apenas guardada a soma dos caminhos até cada localidade num vetor, reduzindo o espaço ocupado.
+No final, este vetor é percorrido para encontrar a soma mínima. 
+Após encontrar o ponto de encontro correto, é calculado o grafo transposto do original e realiza-se o algoritmo Dijkstra a partir do ponto de encontro, de forma a obter os custos individuais dos caminhos de cada filial até ao ponto de encontro.
+\\
+\\
+O algoritmo pode ser representado em pseudocódigo da seguinte forma:
+
+\begin{thebibliography}{9}
+		\bibitem{algs3ed}
+				Thomas H. Cormen,
+				Charles E. Leiserson,
+				Ronald L. Rivest,
+				Clifford Stein,
+				\emph{Introduction to Algorithms},
+				3rd Edition,
+				September 2009
+\end{thebibliography}
+
+\end{document}

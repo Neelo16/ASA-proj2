@@ -1,2 +1,6 @@
 shortest
 tags
+*.aux
+*.fdb_latexmk
+*.log
+*.fls
