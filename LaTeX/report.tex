@@ -11,15 +11,16 @@
 \SetKwInOut{Output}{Output}
 \SetKwFunction{init}{initialize-graph}
 \SetKwFunction{heapify}{min-heapify} % FIXME
-\SetKwFunction{result}{get-result}
 \SetKwFunction{extractmin}{heap-extract-min} % FIXME
 \SetKwFunction{decreasekey}{heap-decrease-key} % FIXME
+\SetKwFunction{result}{get-result}
 \SetKwFunction{bellmanford}{bellman-ford}
 \SetKwFunction{dijkstra}{dijkstra}
 \SetKwFunction{h}{h}
 \SetKwFunction{weight}{w}
 \SetKwFunction{weightprime}{w'}
 \SetKwFunction{min}{min}
+\SetKwFunction{Print}{print}
 \SetKwFunction{shortestpath}{$\delta$}
 \SetKwFunction{shortestpathprime}{$\delta$'}
 \SetKwComment{Comment}{$\triangleright$\ }{}
@@ -41,21 +42,39 @@ No final, este vetor é percorrido para encontrar a soma mínima.
 Após encontrar o ponto de encontro correto, é calculado o grafo transposto do original e realiza-se o algoritmo Dijkstra a partir do ponto de encontro, de forma a obter os custos individuais dos caminhos de cada filial até ao ponto de encontro.
 \\
 \\
-O algoritmo pode ser representado em pseudocódigo da seguinte forma:
+O algoritmo pode ser representado em pseudocódigo da seguinte forma (os algoritmos de Dijkstra e Bellman-Ford são omitidos uma vez que não foram alterados em relação aos originais):
+\\
+\\
+\begin{algorithm}
+    Let G $\leftarrow$ Grafo formado a partir do input\;
+    Let F $\leftarrow$ Vértices de G correspondentes às filiais\;
+    Let \weight{u,v} $\leftarrow$ Função de pesos que devolve a perda entre $u$ e $v$\;
+    meeting-place, total-loss, d $\leftarrow$ \result{G, F, w}\;
+    \eIf{meeting-place $=$ $\emptyset$}{
+        \Print{``N''}\;
+    }
+    {
+        \Print{meeting-place, total-loss}\;
+        \ForEach{v $\in$ F}{
+            \Print{d[v]}\;
+        }
+    }
+    \caption{Função principal}
+\end{algorithm}
 \\
 \\
 \begin{algorithm}[H]
     \Function{\result{G, F, w}}{
-        \ForEach{f $\in$ F[G]} {
+        \ForEach{f $\in$ F} {
             reachable[f] $\leftarrow$ \textbf{true}\;
             sum[v] $\leftarrow$ 0\;
         }
-        G' $=$ G $\cup$ s\;
+        G' $\leftarrow$ G $\cup$ s\;
         d[v] $\leftarrow$ 0 $\forall$ v $\in$ V[G]\;
         \bellmanford{G', s, $\weight$}\;
         \h{v} = \shortestpath{s, v} calculado pelo $\bellmanford$  $\forall$ v $\in$ V[G]\; 
         \weightprime{u, v} = \weight{u, v} + \h{u} $-$ \h{v} $\forall$ $(u,v)$ $\in$ E[G]\; 
-        \ForEach{u $in$ F[G]}{
+        \ForEach{u $in$ F}{
             \dijkstra{G, u, \weightprime}\;
             \ForEach{v $\in$ \shortestpathprime{u, v} calculados por $\dijkstra$}{
                 \If{\shortestpathprime{u, v} = $\infty$}{
@@ -65,12 +84,42 @@ O algoritmo pode ser representado em pseudocódigo da seguinte forma:
             }
         }
         meeting-place $\leftarrow$ \min{\{s: reachable[s] $\forall$ s $\in$ sum\}}\;
+        total-loss $\leftarrow$ sum[meeting-place]\;
         \If{meeting-place $\neq$ $\emptyset$}{
-            paths = \dijkstra{$G^{T}$, meeting-place, $\weightprime$}\;
+            d $\leftarrow$ \dijkstra{$G^{T}$, meeting-place, $\weightprime$}\;
+            \ForEach{v $\in$ F}{
+                d[v] $\leftarrow$ d[v] + \h{meeting-place} $-$ \h{v};
+            }
         }
+        \Return{meeting-place, total-loss, path}\;
     }
-    \caption{Descobrir o ponto de encontro, se existir}
+    \caption{Descobrir o ponto de encontro, se existir, e as distâncias das filiais a este}
 \end{algorithm}
+\pagebreak
+\section{Análise Teórica}
+Os dados do enunciado garantem que o número de filiais é sempre muito menor do que o número de localidades.
+Seja \emph{F} o número de filiais, \emph{V} o número de vértices e \emph{E} o número de arestas.
+Analisemos o pseudocódigo da função \textbf{get-result}, correspondente ao \emph{Algorithm 2} da secção anterior para obter a sua complexidade:
+
+As linhas 5, 8--9, 17, 18 e 22 são executadas em $\Theta(1)$.
+As linhas 2--4 têm complexidade $\Theta(F)$.
+A linha 6 é executada em $\Theta(V)$.
+A linha 7 executa o algoritmo de \emph{Bellman-Ford}, que tem complexidade \O{VE}.
+Há um ciclo nas linhas 10--15 que é executado \emph{F} vezes.
+Na linha 11, o algoritmo de Dijkstra é executado, logo a sua complexidade é \O{(V+E)\log{V}}.
+Nas linhas 12--15, há um ciclo que percorre os caminhos mais curtos para todos os vértices do grafo, tendo complexidade $\Theta(V)$.
+Assim, as linhas 10--15 têm complexidade \O{$F((V+E)$\log{V}$+V)$}, mas uma vez que \O{V} é majorado por \O{(V+E)\log{V}}, é simplesmente \O{F$(V+E)$\log{V}}.
+A linha 16 tem complexidade $\Theta(V)$.
+A linha 19 tem complexidade \O{$(V+E)$\log{V}}, na execução do algoritmo de Dijkstra, e \O{V+E} na construção do grafo transposto. Uma vez que \O{V+E} é majorado por \O{$(V+E)$\log{V}}, tem complexidade \O{$(V+E)$\log{V}}.
+As linhas 20--21 têm complexidade $\Theta(F)$.
+
+É fácil observar que a complexidade das linhas 10--15 majora a complexidade de todas as restantes linhas, portanto o algoritmo tem complexidade \O{$F(V+E)$\log{V}}o
+
+Analisando o pseudocódigo da função principal, observa-se que as linhas 1--3 são realizadas em \O{V+E+F}, a linha 4 é realizada em \O{$F(V+E)$\log{V}} (como estudado no parágrafo anterior), as linhas 9--10 são executadas em $\Theta(F)$ e as restantes linhas são executadas em $\Theta(1)$.
+
+Conclui-se então que a complexidade temporal do programa é majorada pela função \textbf{get-result}, logo a complexidade total é \O{$F(V+E)$\log{V}}.
+
+Analisando a complexidade espacial, nota-se que é necessário \O{V+E+F}, uma vez que para além do grafo (e do seu transposto calculado na função \textbf{get-result}) apenas são necessários vectores com V ou F elementos (mais concretamente, o vetor de filiais inicializado na linha 2 da função principal, e os vetores das linhas 3e 4 da função \textbf{get-result}).
 
 \begin{thebibliography}{9}
 		\bibitem{algs3ed}
