@@ -51,12 +51,12 @@ O algoritmo pode ser representado em pseudocódigo da seguinte forma (os algorit
     Let \weight{u,v} $\leftarrow$ Função de pesos que devolve a perda entre $u$ e $v$\;
     meeting-place, total-loss, d $\leftarrow$ \result{G, F, w}\;
     \eIf{meeting-place $=$ $\emptyset$}{
-        \Print{``N''}\;
+        \textbf{Output} ``N''\;
     }
     {
-        \Print{meeting-place, total-loss}\;
+        \textbf{Output} meeting-place, total-loss\;
         \ForEach{v $\in$ F}{
-            \Print{d[v]}\;
+            \textbf{Output} d[v]\;
         }
     }
     \caption{Função principal}
@@ -83,20 +83,31 @@ O algoritmo pode ser representado em pseudocódigo da seguinte forma (os algorit
                 sum[v] $\leftarrow$ sum[v] + \shortestpathprime{u,v} $+$ \h{v} $-$ \h{u}\;
             }
         }
-        meeting-place $\leftarrow$ \min{\{s: reachable[s] $\forall$ s $\in$ sum\}}\;
-        total-loss $\leftarrow$ sum[meeting-place]\;
+        meeting-place $\leftarrow \emptyset$\;
+        total-loss $\leftarrow \infty$\;
+        \ForEach{s $\in$ sum}{
+            \If{s < total-loss} {
+                meeting-place $\leftarrow$ index[s]\;
+                total-loss $\leftarrow$ s\;
+            }
+        }
         \If{meeting-place $\neq$ $\emptyset$}{
             d $\leftarrow$ \dijkstra{$G^{T}$, meeting-place, $\weightprime$}\;
             \ForEach{v $\in$ F}{
                 d[v] $\leftarrow$ d[v] + \h{meeting-place} $-$ \h{v};
             }
         }
-        \Return{meeting-place, total-loss, path}\;
+        \Return{meeting-place, total-loss, d}\;
     }
     \caption{Descobrir o ponto de encontro, se existir, e as distâncias das filiais a este}
 \end{algorithm}
 \pagebreak
 \section{Análise Teórica}
+A correção dos algoritmos de Johnson, Dijkstra e Bellman-Ford já foi provada.
+A perda total será necessariamente dada pela soma dos caminhos mais curtos a partir de cada filial até ao ponto de encontro, logo encontrar a soma mínima irá encontrar o ponto de encontro certo.
+A realização do algoritmo de Dijkstra a partir do ponto de encontro no grafo transposto irá dar os caminhos mais curtos a partir das filiais no grafo original até esse ponto de encontro: se em algum ponto a distância fosse diferente, teria obrigatoriamente de ser escolhido esse arco no caminho do grafo original, uma vez que os arcos são exatamente os mesmos.
+\\
+\\
 Os dados do enunciado garantem que o número de filiais é sempre muito menor do que o número de localidades.
 Seja \emph{F} o número de filiais, \emph{V} o número de vértices e \emph{E} o número de arestas.
 Analisemos o pseudocódigo da função \textbf{get-result}, correspondente ao \emph{Algorithm 2} da secção anterior para obter a sua complexidade:
@@ -106,8 +117,8 @@ As linhas 2--4 têm complexidade $\Theta(F)$.
 A linha 6 é executada em $\Theta(V)$.
 A linha 7 executa o algoritmo de \emph{Bellman-Ford}, que tem complexidade \O{VE}.
 Há um ciclo nas linhas 10--15 que é executado \emph{F} vezes.
-Na linha 11, o algoritmo de Dijkstra é executado, logo a sua complexidade é \O{(V+E)\log{V}}.
-Nas linhas 12--15, há um ciclo que percorre os caminhos mais curtos para todos os vértices do grafo, tendo complexidade $\Theta(V)$.
+Na linha 11, o algoritmo de \emph{Dijkstra} é executado, logo a sua complexidade é \O{(V+E)\log{V}}.
+Nas linhas 12--15, há um ciclo que percorre os custos dos caminhos mais curtos para todos os vértices do grafo dados pelo \emph{Dijkstra}, tendo complexidade $\Theta(V)$.
 Assim, as linhas 10--15 têm complexidade \O{$F((V+E)$\log{V}$+V)$}, mas uma vez que \O{V} é majorado por \O{(V+E)\log{V}}, é simplesmente \O{F$(V+E)$\log{V}}.
 A linha 16 tem complexidade $\Theta(V)$.
 A linha 19 tem complexidade \O{$(V+E)$\log{V}}, na execução do algoritmo de Dijkstra, e \O{V+E} na construção do grafo transposto. Uma vez que \O{V+E} é majorado por \O{$(V+E)$\log{V}}, tem complexidade \O{$(V+E)$\log{V}}.
@@ -121,7 +132,35 @@ Analisando o pseudocódigo da função principal, observa-se que as linhas 1--3 
 Conclui-se então que a complexidade temporal do programa é majorada pela função \textbf{get-result}, logo a complexidade total é \O{$F(V+E)$\log{V}}.
 \\
 \\
-Analisando a complexidade espacial, nota-se que é necessário \O{V+E+F}, uma vez que para além do grafo (e do seu transposto calculado na função \textbf{get-result}) apenas são necessários vectores com V ou F elementos (mais concretamente, o vetor de filiais inicializado na linha 2 da função principal, e os vetores das linhas 3 e 4 da função \textbf{get-result}).
+Analisando a complexidade espacial, nota-se que é \O{V+E+F}, uma vez que para além do grafo (e do seu transposto calculado na função \textbf{get-result}) apenas são necessários vectores com V ou F elementos (mais concretamente, o vetor de filiais inicializado na linha 2 da função principal, e os vetores das linhas 3 e 4 da função \textbf{get-result}).
+
+\section{Avaliação Experimental dos Resultados}
+
+Fazendo dois tipos de testes diferentes, um em que varia o número de filiais e outro onde varia o número de vértices e arestas, é possível ver que o primeiro tem um crescimento linear, e o segundo tem o crescimento do tipo $y = x\log{x}$.
+
+\begin{center}
+\begin{tikzpicture}
+		\begin{axis}[
+				title=Relação Tempo-Dimensão,
+                xlabel={Dimensão (F)},
+				ylabel={Tempo (s)}
+		]
+		\addplot table {branches_results.dat};
+		\end{axis}
+\end{tikzpicture}
+\end{center}
+
+\begin{center}
+\begin{tikzpicture}
+		\begin{axis}[
+				title=Relação Tempo-Dimensão,
+                xlabel={Dimensão (V+E)},
+				ylabel={Tempo (s)}
+		]
+        \addplot table {test_results.dat};
+		\end{axis}
+\end{tikzpicture}
+\end{center}
 
 \begin{thebibliography}{9}
 		\bibitem{algs3ed}
