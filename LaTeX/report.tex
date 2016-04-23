@@ -124,19 +124,19 @@ A linha 16 tem complexidade $\Theta(V)$.
 A linha 19 tem complexidade \O{$(V+E)$\log{V}}, na execução do algoritmo de Dijkstra, e \O{V+E} na construção do grafo transposto. Uma vez que \O{V+E} é majorado por \O{$(V+E)$\log{V}}, tem complexidade \O{$(V+E)$\log{V}}.
 As linhas 20--21 têm complexidade $\Theta(F)$.
 
-É fácil observar que a complexidade das linhas 10--15 majora a complexidade de todas as restantes linhas, portanto o algoritmo tem complexidade \O{$F(V+E)$\log{V}}.
+Uma vez que o número de filiais é significativamente menor do que o número de localidades, a complexidade da linha 7 não será necessariamente majorada pela complexidade das linhas 10--15, o que leva a uma complexidade total de \O{$F(V+E)$\log{V}$ +VE$}.
 \\
 \\
 Analisando o pseudocódigo da função principal, observa-se que as linhas 1--3 são realizadas em \O{V+E+F}, a linha 4 é realizada em \O{$F(V+E)$\log{V}} (como estudado no parágrafo anterior), as linhas 9--10 são executadas em $\Theta(F)$ e as restantes linhas são executadas em $\Theta(1)$.
 
-Conclui-se então que a complexidade temporal do programa é majorada pela função \textbf{get-result}, logo a complexidade total é \O{$F(V+E)$\log{V}}.
+Conclui-se então que a complexidade temporal do programa é majorada pela função \textbf{get-result}, logo a complexidade total é \O{$F(V+E)$\log{V}$+VE$}.
 \\
 \\
 Analisando a complexidade espacial, nota-se que é \O{V+E+F}, uma vez que para além do grafo (e do seu transposto calculado na função \textbf{get-result}) apenas são necessários vectores com V ou F elementos (mais concretamente, o vetor de filiais inicializado na linha 2 da função principal, e os vetores das linhas 3 e 4 da função \textbf{get-result}).
 
 \section{Avaliação Experimental dos Resultados}
 
-Fazendo dois tipos de testes diferentes, um em que varia o número de filiais e outro onde varia o número de vértices e arestas, é possível ver que o primeiro tem um crescimento linear, e o segundo tem o crescimento do tipo $y = x\log{x}$.
+Fazendo dois tipos de testes diferentes, um em que varia o número de filiais e outro onde varia o número de vértices e arestas, é possível ver que o primeiro tem um crescimento linear, e o segundo tem o crescimento do tipo $y = x\log{x}$, sendo coerente com os resultados teóricos esperados.
 
 \begin{center}
 \begin{tikzpicture}
