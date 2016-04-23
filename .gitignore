@@ -4,3 +4,5 @@ tags
 *.fdb_latexmk
 *.log
 *.fls
+random_tests/*.in
+random_tests/*.time
