@@ -33,7 +33,7 @@
 \section{Introdução}
 Este projeto tem como objetivo encontrar um ponto de encontro entre várias filiais de forma a minimizar o custo total das rotas, se existir.
 O problema pode ser reduzido a encontrar a menor soma dos custos dos caminhos mais curtos de todas as filiais para cada localidade, representando os caminhos como arestas de um grafo e os vértices como as localidades.
-Na resolução do problema utilizei a descrição do algoritmo de Johnson e da estutura de dados Min-Heap disponíveis no livro \emph{Introduction to Algorithms}\cite{algs3ed}.
+Na resolução do problema utilizei a descrição do algoritmo de Johnson e da estrutura de dados Min-Heap disponíveis no livro \emph{Introduction to Algorithms}\cite{algs3ed}.
 
 \section{Descrição da solução}
 A solução encontrada consiste em realizar uma variação do algoritmo Johnson tomando como vértices de fonte todas as filiais.
@@ -65,8 +65,8 @@ O algoritmo pode ser representado em pseudocódigo da seguinte forma (os algorit
 \\
 \begin{algorithm}[H]
     \Function{\result{G, F, w}}{
-        \ForEach{f $\in$ F} {
-            reachable[f] $\leftarrow$ \textbf{true}\;
+        \ForEach{v $\in$ V[G]} {
+            reachable[v] $\leftarrow$ \textbf{true}\;
             sum[v] $\leftarrow$ 0\;
         }
         G' $\leftarrow$ G $\cup$ s\;
@@ -74,7 +74,7 @@ O algoritmo pode ser representado em pseudocódigo da seguinte forma (os algorit
         \bellmanford{G', s, $\weight$}\;
         \h{v} = \shortestpath{s, v} calculado pelo $\bellmanford$  $\forall$ v $\in$ V[G]\; 
         \weightprime{u, v} = \weight{u, v} + \h{u} $-$ \h{v} $\forall$ $(u,v)$ $\in$ E[G]\; 
-        \ForEach{u $in$ F}{
+        \ForEach{u $\in$ F}{
             \dijkstra{G, u, \weightprime}\;
             \ForEach{v $\in$ \shortestpathprime{u, v} calculados por $\dijkstra$}{
                 \If{\shortestpathprime{u, v} = $\infty$}{
@@ -86,7 +86,7 @@ O algoritmo pode ser representado em pseudocódigo da seguinte forma (os algorit
         meeting-place $\leftarrow \emptyset$\;
         total-loss $\leftarrow \infty$\;
         \ForEach{s $\in$ sum}{
-            \If{s < total-loss} {
+            \If{reachable[index[s]] \textbf{and} s < total-loss} {
                 meeting-place $\leftarrow$ index[s]\;
                 total-loss $\leftarrow$ s\;
             }
@@ -112,17 +112,18 @@ Os dados do enunciado garantem que o número de filiais é sempre muito menor do
 Seja \emph{F} o número de filiais, \emph{V} o número de vértices e \emph{E} o número de arestas.
 Analisemos o pseudocódigo da função \textbf{get-result}, correspondente ao \emph{Algorithm 2} da secção anterior para obter a sua complexidade:
 
-As linhas 5, 8--9, 17, 18 e 22 são executadas em $\Theta(1)$.
-As linhas 2--4 têm complexidade $\Theta(F)$.
+As linhas 5, 8--9, 16--17 e 22 são executadas em $\Theta(1)$.
+As linhas 2--4 têm complexidade $\Theta(V)$.
 A linha 6 é executada em $\Theta(V)$.
 A linha 7 executa o algoritmo de \emph{Bellman-Ford}, que tem complexidade \O{VE}.
 Há um ciclo nas linhas 10--15 que é executado \emph{F} vezes.
 Na linha 11, o algoritmo de \emph{Dijkstra} é executado, logo a sua complexidade é \O{(V+E)\log{V}}.
 Nas linhas 12--15, há um ciclo que percorre os custos dos caminhos mais curtos para todos os vértices do grafo dados pelo \emph{Dijkstra}, tendo complexidade $\Theta(V)$.
+
 Assim, as linhas 10--15 têm complexidade \O{$F((V+E)$\log{V}$+V)$}, mas uma vez que \O{V} é majorado por \O{(V+E)\log{V}}, é simplesmente \O{F$(V+E)$\log{V}}.
-A linha 16 tem complexidade $\Theta(V)$.
-A linha 19 tem complexidade \O{$(V+E)$\log{V}}, na execução do algoritmo de Dijkstra, e \O{V+E} na construção do grafo transposto. Uma vez que \O{V+E} é majorado por \O{$(V+E)$\log{V}}, tem complexidade \O{$(V+E)$\log{V}}.
-As linhas 20--21 têm complexidade $\Theta(F)$.
+As linhas 18--21 têm complexidade $\Theta(V)$.
+A linha 23 tem complexidade \O{$(V+E)$\log{V}}, na execução do algoritmo de Dijkstra, e \O{V+E} na construção do grafo transposto. Uma vez que \O{V+E} é majorado por \O{$(V+E)$\log{V}}, tem complexidade \O{$(V+E)$\log{V}}.
+As linhas 24--25 têm complexidade $\Theta(F)$.
 
 Uma vez que o número de filiais é significativamente menor do que o número de localidades, a complexidade da linha 7 não será necessariamente majorada pela complexidade das linhas 10--15, o que leva a uma complexidade total de \O{$F(V+E)$\log{V}$ +VE$}.
 \\
